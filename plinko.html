@@ -58,23 +58,32 @@
       bottom: 0;
     }
 
-    #drop-button {
-      margin: 10px auto;
+    #controls {
+      margin: 20px auto;
+    }
+
+    input {
+      padding: 10px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      width: 100px;
+      text-align: center;
+      margin: 5px;
+    }
+
+    button {
       padding: 10px 20px;
       background-color: #007bff;
-      border: none;
       color: white;
+      border: none;
       border-radius: 12px;
       cursor: pointer;
     }
 
-    #ball-count {
-      padding: 8px;
-      border-radius: 12px;
+    #chips-display {
       margin-top: 10px;
-      width: 60px;
-      text-align: center;
-      border: none;
+      font-weight: bold;
     }
 
     #result {
@@ -84,15 +93,32 @@
 </head>
 <body>
   <h1>Plinko</h1>
+  <div id="chips-display">Chips: 0</div>
+  <div id="controls">
+    <input type="number" id="ball-count" min="1" value="1" placeholder="Balls">
+    <input type="number" id="ball-value" min="1" value="100" placeholder="Value">
+    <button id="drop-button">Drop Ball(s)</button>
+  </div>
   <div id="plinko-board"></div>
-  <input type="number" id="ball-count" min="1" value="1">
-  <button id="drop-button">Drop Ball(s)</button>
   <div id="result"></div>
 
   <script>
     const board = document.getElementById('plinko-board');
-    const slotPoints = [200, 400, 500, 400, 200, 300, 600, 100];
+    const resultDiv = document.getElementById('result');
+    const chipsDisplay = document.getElementById('chips-display');
+    const slotMultipliers = [2, 1.5, 1, 0.75, 0.75, 1, 1.5, 2];
     const slots = [];
+
+    function getChips() {
+      return parseInt(localStorage.getItem('chips')) || 5000;
+    }
+
+    function setChips(amount) {
+      localStorage.setItem('chips', amount);
+      chipsDisplay.textContent = `Chips: ${amount}`;
+    }
+
+    setChips(getChips());
 
     function createPegs() {
       const rows = 12;
@@ -115,7 +141,7 @@
 
     function createSlots() {
       const boardWidth = board.clientWidth;
-      const slotCount = slotPoints.length;
+      const slotCount = slotMultipliers.length;
       const slotWidth = boardWidth / slotCount;
 
       for (let i = 0; i < slotCount; i++) {
@@ -123,13 +149,13 @@
         slot.classList.add('slot');
         slot.style.width = `${slotWidth}px`;
         slot.style.left = `${i * slotWidth}px`;
-        slot.innerText = slotPoints[i];
+        slot.innerText = `x${slotMultipliers[i]}`;
         board.appendChild(slot);
         slots.push(slot);
       }
     }
 
-    function dropBall(delay = 0) {
+    function dropBall(value, delay = 0) {
       setTimeout(() => {
         const ball = document.createElement('div');
         ball.classList.add('ball');
@@ -147,17 +173,19 @@
           ball.style.top = `${y}px`;
           ball.style.left = `${x}px`;
 
-          if (Math.random() < 0.5) {
-            direction *= -1;
-          }
+          if (Math.random() < 0.5) direction *= -1;
 
           if (y >= board.clientHeight - 50) {
             clearInterval(interval);
-            const slotIndex = Math.floor(x / (board.clientWidth / slotPoints.length));
-            const score = slotPoints[Math.max(0, Math.min(slotPoints.length - 1, slotIndex))];
+            const slotIndex = Math.floor(x / (board.clientWidth / slotMultipliers.length));
+            const clampedIndex = Math.max(0, Math.min(slotMultipliers.length - 1, slotIndex));
+            const multiplier = slotMultipliers[clampedIndex];
+            const winnings = Math.round(value * multiplier);
+            const currentChips = getChips();
+            setChips(currentChips + winnings);
             const result = document.createElement('div');
-            result.textContent = `Ball landed in Slot ${slotIndex + 1}: ${score} points!`;
-            document.getElementById('result').appendChild(result);
+            result.textContent = `Ball landed in slot ${clampedIndex + 1} (x${multiplier}) → +${winnings} chips`;
+            resultDiv.appendChild(result);
           }
         }, 50);
       }, delay);
@@ -165,9 +193,20 @@
 
     document.getElementById('drop-button').addEventListener('click', () => {
       const count = parseInt(document.getElementById('ball-count').value) || 1;
-      document.getElementById('result').innerHTML = '';
+      const value = parseInt(document.getElementById('ball-value').value) || 100;
+      const totalCost = count * value;
+      const currentChips = getChips();
+
+      if (totalCost > currentChips) {
+        alert("Not enough chips!");
+        return;
+      }
+
+      setChips(currentChips - totalCost);
+      resultDiv.innerHTML = '';
+
       for (let i = 0; i < count; i++) {
-        dropBall(i * 300); // Droppa med 300ms intervall
+        dropBall(value, i * 300);
       }
     });
 
