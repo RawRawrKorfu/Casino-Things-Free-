@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Roulette</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 30px;
+    }
+
+    #wheel-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      margin: 0 auto;
+    }
+
+    canvas {
+      border-radius: 50%;
+      box-shadow: 0 0 15px white;
+    }
+
+    #arrow {
+      width: 0;
+      height: 0;
+      border-top: 15px solid transparent;
+      border-bottom: 15px solid transparent;
+      border-left: 25px solid yellow;
+      position: absolute;
+      top: 50%;
+      left: 100%;
+      transform: translateY(-50%) rotate(180deg); /* pekar inåt */
+      transform-origin: left center;
+      z-index: 10;
+    }
+
+    #controls {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input, select {
+      padding: 10px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      width: 200px;
+      text-align: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #1976d2;
+    }
+
+    #result {
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Roulette</h1>
+
+  <div id="wheel-container">
+    <canvas id="wheel" width="400" height="400"></canvas>
+    <div id="arrow"></div>
+  </div>
+
+  <div id="controls">
+    <input type="number" id="guessNumber" placeholder="Guess number (1-50)" min="1" max="50">
+    <select id="guessColor">
+      <option value="">Guess color</option>
+      <option value="red">Red</option>
+      <option value="blue">Blue</option>
+    </select>
+    <button onclick="spin()">Spin</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    const totalSectors = 50;
+    const radius = canvas.width / 2;
+    const anglePerSector = 2 * Math.PI / totalSectors;
+    const colors = ['red', 'blue'];
+    const sectors = [];
+
+    for (let i = 0; i < totalSectors; i++) {
+      sectors.push({
+        number: i + 1,
+        color: colors[i % 2]
+      });
+    }
+
+    function drawWheel(rotation = 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      sectors.forEach((sector, i) => {
+        const startAngle = i * anglePerSector + rotation;
+        const endAngle = startAngle + anglePerSector;
+
+        ctx.beginPath();
+        ctx.moveTo(radius, radius);
+        ctx.arc(radius, radius, radius, startAngle, endAngle);
+        ctx.fillStyle = sector.color;
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.stroke();
+
+        const textAngle = startAngle + anglePerSector / 2;
+        const textX = radius + (radius - 40) * Math.cos(textAngle);
+        const textY = radius + (radius - 40) * Math.sin(textAngle);
+        ctx.fillStyle = 'white';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(sector.number, textX, textY);
+      });
+    }
+
+    drawWheel();
+
+    function spin() {
+      const guessNumber = parseInt(document.getElementById('guessNumber').value);
+      const guessColor = document.getElementById('guessColor').value;
+      const resultDiv = document.getElementById('result');
+
+      if (guessNumber && guessColor) {
+        resultDiv.textContent = "Please choose either a number OR a color — not both!";
+        return;
+      }
+
+      if (!guessNumber && !guessColor) {
+        resultDiv.textContent = "Please choose a number or a color!";
+        return;
+      }
+
+      const spinAngle = Math.random() * 360 + 360 * 3;
+      const finalRotation = spinAngle * Math.PI / 180;
+      const startTime = performance.now();
+      const duration = 2000;
+
+      function animateSpin(time) {
+        const progress = Math.min((time - startTime) / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 4);
+        const angle = easeOut * finalRotation;
+        drawWheel(angle);
+        if (progress < 1) {
+          requestAnimationFrame(animateSpin);
+        } else {
+          const finalAngle = (2 * Math.PI - (angle % (2 * Math.PI))) % (2 * Math.PI);
+          const index = Math.floor(finalAngle / anglePerSector) % totalSectors;
+          const landed = sectors[index];
+
+          let resultText = `It landed on ${landed.number} (${landed.color}) — `;
+
+          if (guessNumber && landed.number === guessNumber) {
+            resultText += "You WIN by number! 🎉";
+          } else if (guessColor && landed.color === guessColor) {
+            resultText += "You WIN by color! 🎉";
+          } else {
+            resultText += "You lose 😢";
+          }
+
+          resultDiv.textContent = resultText;
+        }
+      }
+
+      requestAnimationFrame(animateSpin);
+    }
+  </script>
+</body>
+</html>

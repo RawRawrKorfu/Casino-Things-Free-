@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Leaderboard</title>
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #leaderboard {
+      margin-top: 30px;
+      width: 300px;
+      background-color: #2e2e2e;
+      padding: 15px;
+      border-radius: 15px;
+    }
+
+    #leaderboard h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    #leaderboard ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    #leaderboard li {
+      padding: 5px 0;
+      border-bottom: 1px solid #444;
+    }
+
+    #backButton {
+      margin-top: 20px;
+      background-color: #2196f3;
+      border-radius: 15px;
+      padding: 10px 20px;
+      color: white;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    #backButton:hover {
+      background-color: #388e3c;
+    }
+  </style>
+</head>
+<body>
+  <h1>Leaderboard</h1>
+  <div id="leaderboard">
+    <h2>Top 5 Players</h2>
+    <ul id="leaderboardList">
+      <!-- Top 5 scores will be listed here -->
+    </ul>
+  </div>
+
+  <a id="backButton" href="index.html">Back to Game</a>
+
+  <script>
+    const leaderboardList = document.getElementById('leaderboardList');
+    const leaderboard = [500, 400, 300, 200, 100]; // Example scores
+
+    leaderboard.forEach((score, index) => {
+      const li = document.createElement('li');
+      li.textContent = `${index + 1}. ${score} points`;
+      leaderboardList.appendChild(li);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Plinko</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #1e1e1e;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    #plinko-board {
+      position: relative;
+      width: 800px;
+      height: 900px;
+      margin: 20px auto;
+      background-color: #2a2a2a;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .peg {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background-color: white;
+      border-radius: 50%;
+    }
+
+    .ball {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background-color: red;
+      border-radius: 50%;
+      z-index: 10;
+      transition: top 0.05s ease-out, left 0.05s ease-out;
+    }
+
+    .slot {
+      position: absolute;
+      width: 80px;
+      height: 40px;
+      background-color: #3a3a3a;
+      border: 2px solid white;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      bottom: 0;
+    }
+
+    #drop-button {
+      margin: 10px auto;
+      padding: 10px 20px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    #ball-count {
+      padding: 8px;
+      border-radius: 12px;
+      margin-top: 10px;
+      width: 60px;
+      text-align: center;
+      border: none;
+    }
+
+    #result {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Plinko</h1>
+  <div id="plinko-board"></div>
+  <input type="number" id="ball-count" min="1" value="1">
+  <button id="drop-button">Drop Ball(s)</button>
+  <div id="result"></div>
+
+  <script>
+    const board = document.getElementById('plinko-board');
+    const slotPoints = [200, 400, 500, 400, 200, 300, 600, 100];
+    const slots = [];
+
+    function createPegs() {
+      const rows = 12;
+      const pegSpacingX = 45;
+      const pegSpacingY = 60;
+      const boardWidth = board.clientWidth;
+      const cols = Math.floor(boardWidth / pegSpacingX);
+
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x <= cols; x++) {
+          const offset = (y % 2 === 0) ? 0 : pegSpacingX / 2;
+          const peg = document.createElement('div');
+          peg.classList.add('peg');
+          peg.style.left = `${x * pegSpacingX + offset - 6}px`;
+          peg.style.top = `${y * pegSpacingY}px`;
+          board.appendChild(peg);
+        }
+      }
+    }
+
+    function createSlots() {
+      const boardWidth = board.clientWidth;
+      const slotCount = slotPoints.length;
+      const slotWidth = boardWidth / slotCount;
+
+      for (let i = 0; i < slotCount; i++) {
+        const slot = document.createElement('div');
+        slot.classList.add('slot');
+        slot.style.width = `${slotWidth}px`;
+        slot.style.left = `${i * slotWidth}px`;
+        slot.innerText = slotPoints[i];
+        board.appendChild(slot);
+        slots.push(slot);
+      }
+    }
+
+    function dropBall(delay = 0) {
+      setTimeout(() => {
+        const ball = document.createElement('div');
+        ball.classList.add('ball');
+        let x = board.clientWidth / 2;
+        let y = 0;
+        let direction = Math.random() < 0.5 ? -1 : 1;
+
+        ball.style.left = `${x}px`;
+        ball.style.top = `${y}px`;
+        board.appendChild(ball);
+
+        let interval = setInterval(() => {
+          y += 20;
+          x += direction * 15;
+          ball.style.top = `${y}px`;
+          ball.style.left = `${x}px`;
+
+          if (Math.random() < 0.5) {
+            direction *= -1;
+          }
+
+          if (y >= board.clientHeight - 50) {
+            clearInterval(interval);
+            const slotIndex = Math.floor(x / (board.clientWidth / slotPoints.length));
+            const score = slotPoints[Math.max(0, Math.min(slotPoints.length - 1, slotIndex))];
+            const result = document.createElement('div');
+            result.textContent = `Ball landed in Slot ${slotIndex + 1}: ${score} points!`;
+            document.getElementById('result').appendChild(result);
+          }
+        }, 50);
+      }, delay);
+    }
+
+    document.getElementById('drop-button').addEventListener('click', () => {
+      const count = parseInt(document.getElementById('ball-count').value) || 1;
+      document.getElementById('result').innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        dropBall(i * 300); // Droppa med 300ms intervall
+      }
+    });
+
+    createPegs();
+    createSlots();
+  </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Casino Games</title>
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+    }
+
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    a button {
+      padding: 15px 30px;
+      font-size: 18px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    a button:hover {
+      background-color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>Select a Game</h1>
+  <div class="button-container">
+    <a href="mines.html"><button>Mines</button></a>
+    <a href="plinko.html"><button>Plinko</button></a>
+    <a href="roulette.html"><button>Roulette</button></a> <!-- Här är roulette-knappen -->
+  </div>
+</body>
+</html>

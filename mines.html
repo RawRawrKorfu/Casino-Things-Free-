@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mines Casino Game</title>
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    #controls {
+      margin-bottom: 20px;
+    }
+
+    #mines {
+      border-radius: 15px;
+      padding: 5px 10px;
+      background-color: #333;
+      color: white;
+      font-size: 16px;
+      border: none;
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(5, 60px);
+      grid-gap: 10px;
+      justify-items: center;
+    }
+
+    .cell {
+      width: 60px;
+      height: 60px;
+      background-color: #2e2e2e;
+      border: none;
+      border-radius: 15px;
+      font-size: 24px;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .cell:disabled {
+      cursor: not-allowed;
+    }
+
+    .safe {
+      background-color: #4caf50;
+    }
+
+    .mine {
+      background-color: #e53935;
+    }
+
+    #info {
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    #gameOverPopup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      display: none;
+      text-align: center;
+    }
+
+    #gameOverPopup button {
+      background-color: #2196f3;
+      border: none;
+      border-radius: 15px;
+      padding: 10px 20px;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button {
+      border-radius: 15px;
+      padding: 10px 20px;
+      background-color: #2196f3;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      border: none;
+      margin-top: 10px;
+    }
+
+    button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+
+    #leaderboardLink {
+      background-color: #4caf50;
+      border-radius: 15px;
+      padding: 10px 20px;
+      color: white;
+      text-decoration: none;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+
+    #leaderboardLink:hover {
+      background-color: #388e3c;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mines</h1>
+  <div id="controls">
+    <label for="mines">Number of mines: </label>
+    <input type="number" id="mines" min="1" max="24" value="5">
+    <button onclick="startGame()">Start Game</button>
+  </div>
+  <div id="grid"></div>
+  <div id="info">
+    Safe clicks: <span id="safeCount">0</span><br>
+    Score: <span id="score">0</span>
+  </div>
+
+  <div id="gameOverPopup">
+    <p>The game is over! You hit a mine.</p>
+    <button onclick="startGame()">Play Again</button>
+  </div>
+
+  <!-- Link to the leaderboard -->
+  <a id="leaderboardLink" href="leaderboard.html">Go to Leaderboard</a>
+
+  <script>
+    const gridElement = document.getElementById('grid');
+    const safeCountDisplay = document.getElementById('safeCount');
+    const scoreDisplay = document.getElementById('score');
+    const gameOverPopup = document.getElementById('gameOverPopup');
+    let minePositions = [];
+    let gameOver = false;
+    let safeClicks = 0;
+    let score = 0;
+    let leaderboard = [];
+
+    function startGame() {
+      const mineCount = parseInt(document.getElementById('mines').value);
+      if (mineCount < 1 || mineCount > 24) {
+        alert('The number of mines must be between 1 and 24.');
+        return;
+      }
+
+      gridElement.innerHTML = '';
+      minePositions = [];
+      gameOver = false;
+      safeClicks = 0;
+      score = 0;
+      safeCountDisplay.textContent = '0';
+      scoreDisplay.textContent = '0';
+      gameOverPopup.style.display = 'none';
+
+      const totalCells = 25;
+      while (minePositions.length < mineCount) {
+        const randomIndex = Math.floor(Math.random() * totalCells);
+        if (!minePositions.includes(randomIndex)) {
+          minePositions.push(randomIndex);
+        }
+      }
+
+      for (let i = 0; i < totalCells; i++) {
+        const button = document.createElement('button');
+        button.classList.add('cell');
+        button.dataset.index = i;
+        button.onclick = () => revealCell(button, i);
+        gridElement.appendChild(button);
+      }
+    }
+
+    function revealCell(button, index) {
+      if (gameOver || button.disabled) return;
+
+      if (minePositions.includes(index)) {
+        button.classList.add('mine');
+        button.textContent = '💣';
+        button.style.backgroundColor = '#e53935'; 
+        endGame();
+      } else {
+        button.classList.add('safe');
+        button.textContent = '✅';
+        button.style.backgroundColor = '#4caf50'; 
+        button.disabled = true;
+        safeClicks++;
+        score += 10;
+        safeCountDisplay.textContent = safeClicks;
+        scoreDisplay.textContent = score;
+      }
+    }
+
+    function endGame() {
+      gameOver = true;
+      const buttons = document.querySelectorAll('.cell');
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (minePositions.includes(idx)) {
+          btn.classList.add('mine');
+          btn.textContent = '💣';
+          btn.style.backgroundColor = '#e53935'; 
+        }
+      });
+      gameOverPopup.style.display = 'block'; 
+    }
+  </script>
+</body>
+</html>
