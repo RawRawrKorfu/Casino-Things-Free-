@@ -42,12 +42,11 @@
       background-color: red;
       border-radius: 50%;
       z-index: 10;
-      transition: top 0.05s ease-out, left 0.05s ease-out;
+      transition: top 0.05s linear, left 0.05s linear;
     }
 
     .slot {
       position: absolute;
-      width: 80px;
       height: 40px;
       background-color: #3a3a3a;
       border: 2px solid white;
@@ -56,78 +55,82 @@
       align-items: center;
       justify-content: center;
       bottom: 0;
+      color: yellow;
+      font-weight: bold;
     }
 
     #controls {
-      margin: 20px auto;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
     }
 
     input {
-      padding: 10px;
+      padding: 8px;
       border-radius: 12px;
-      border: none;
-      font-size: 16px;
       width: 100px;
       text-align: center;
-      margin: 5px;
+      border: none;
     }
 
     button {
       padding: 10px 20px;
       background-color: #007bff;
-      color: white;
       border: none;
+      color: white;
       border-radius: 12px;
       cursor: pointer;
     }
 
-    #chips-display {
-      margin-top: 10px;
-      font-weight: bold;
+    #result {
+      margin-top: 15px;
     }
 
-    #result {
+    #chip-count {
+      font-weight: bold;
       margin-top: 10px;
+      font-size: 18px;
     }
   </style>
 </head>
 <body>
   <h1>Plinko</h1>
-  <div id="chips-display">Chips: 0</div>
+  <div id="chip-count">Chips: <span id="chips">5000</span></div>
+  <div id="plinko-board"></div>
+
   <div id="controls">
-    <input type="number" id="ball-count" min="1" value="1" placeholder="Balls">
-    <input type="number" id="ball-value" min="1" value="100" placeholder="Value">
+    <input type="number" id="ball-count" min="1" value="1" placeholder="Bollar">
+    <input type="number" id="bet-per-ball" min="1" value="100" placeholder="Chips per boll">
     <button id="drop-button">Drop Ball(s)</button>
   </div>
-  <div id="plinko-board"></div>
+
   <div id="result"></div>
 
   <script>
     const board = document.getElementById('plinko-board');
     const resultDiv = document.getElementById('result');
-    const chipsDisplay = document.getElementById('chips-display');
+    const chipsSpan = document.getElementById('chips');
+
     const slotMultipliers = [2, 1.5, 1, 0.75, 0.75, 1, 1.5, 2];
     const slots = [];
+    const pegRows = 11; // antal rader pegs
+    let chips = parseInt(localStorage.getItem('chips')) || 5000;
+    chipsSpan.textContent = chips;
 
-    function getChips() {
-      return parseInt(localStorage.getItem('chips')) || 5000;
+    function saveChips() {
+      localStorage.setItem('chips', chips);
+      chipsSpan.textContent = Math.floor(chips);
     }
-
-    function setChips(amount) {
-      localStorage.setItem('chips', amount);
-      chipsDisplay.textContent = `Chips: ${amount}`;
-    }
-
-    setChips(getChips());
 
     function createPegs() {
-      const rows = 12;
       const pegSpacingX = 45;
       const pegSpacingY = 60;
       const boardWidth = board.clientWidth;
       const cols = Math.floor(boardWidth / pegSpacingX);
 
-      for (let y = 0; y < rows; y++) {
+      for (let y = 0; y < pegRows; y++) {
         for (let x = 0; x <= cols; x++) {
           const offset = (y % 2 === 0) ? 0 : pegSpacingX / 2;
           const peg = document.createElement('div');
@@ -149,13 +152,13 @@
         slot.classList.add('slot');
         slot.style.width = `${slotWidth}px`;
         slot.style.left = `${i * slotWidth}px`;
-        slot.innerText = `x${slotMultipliers[i]}`;
+        slot.textContent = `x${slotMultipliers[i]}`;
         board.appendChild(slot);
         slots.push(slot);
       }
     }
 
-    function dropBall(value, delay = 0) {
+    function dropBall(delay = 0, bet = 100) {
       setTimeout(() => {
         const ball = document.createElement('div');
         ball.classList.add('ball');
@@ -167,24 +170,41 @@
         ball.style.top = `${y}px`;
         board.appendChild(ball);
 
+        const pegHeightLimit = pegRows * 60;
+
         let interval = setInterval(() => {
           y += 20;
-          x += direction * 15;
+
+          if (y < pegHeightLimit) {
+            x += direction * 15;
+            if (Math.random() < 0.5) direction *= -1;
+          } else {
+            x += direction * 5; // fortsätt i samma riktning nere i tomma zonen
+          }
+
+          // Begränsa bollen så den inte åker utanför kanten
+          if (x < 0) {
+            x = 0;
+            direction *= -1;
+          } else if (x > board.clientWidth - 14) {
+            x = board.clientWidth - 14;
+            direction *= -1;
+          }
+
           ball.style.top = `${y}px`;
           ball.style.left = `${x}px`;
-
-          if (Math.random() < 0.5) direction *= -1;
 
           if (y >= board.clientHeight - 50) {
             clearInterval(interval);
             const slotIndex = Math.floor(x / (board.clientWidth / slotMultipliers.length));
-            const clampedIndex = Math.max(0, Math.min(slotMultipliers.length - 1, slotIndex));
-            const multiplier = slotMultipliers[clampedIndex];
-            const winnings = Math.round(value * multiplier);
-            const currentChips = getChips();
-            setChips(currentChips + winnings);
+            const validIndex = Math.max(0, Math.min(slotMultipliers.length - 1, slotIndex));
+            const multiplier = slotMultipliers[validIndex];
+            const winnings = bet * multiplier;
+            chips += winnings;
+            saveChips();
+
             const result = document.createElement('div');
-            result.textContent = `Ball landed in slot ${clampedIndex + 1} (x${multiplier}) → +${winnings} chips`;
+            result.textContent = `Ball landed in Slot ${validIndex + 1}: x${multiplier} → You won ${Math.floor(winnings)} chips!`;
             resultDiv.appendChild(result);
           }
         }, 50);
@@ -193,20 +213,25 @@
 
     document.getElementById('drop-button').addEventListener('click', () => {
       const count = parseInt(document.getElementById('ball-count').value) || 1;
-      const value = parseInt(document.getElementById('ball-value').value) || 100;
-      const totalCost = count * value;
-      const currentChips = getChips();
+      const bet = parseInt(document.getElementById('bet-per-ball').value) || 0;
 
-      if (totalCost > currentChips) {
-        alert("Not enough chips!");
+      if (bet <= 0 || count <= 0) {
+        alert('Enter valid values!');
         return;
       }
 
-      setChips(currentChips - totalCost);
+      const totalCost = count * bet;
+      if (totalCost > chips) {
+        alert('Not enough chips!');
+        return;
+      }
+
+      chips -= totalCost;
+      saveChips();
       resultDiv.innerHTML = '';
 
       for (let i = 0; i < count; i++) {
-        dropBall(value, i * 300);
+        dropBall(i * 300, bet);
       }
     });
 
