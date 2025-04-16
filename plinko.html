@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Plinko</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #1e1e1e;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    #plinko-board {
+      position: relative;
+      width: 800px;
+      height: 900px;
+      margin: 20px auto;
+      background-color: #2a2a2a;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .peg {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background-color: white;
+      border-radius: 50%;
+    }
+
+    .ball {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background-color: red;
+      border-radius: 50%;
+      z-index: 10;
+      transition: top 0.05s linear, left 0.05s linear;
+    }
+
+    .slot {
+      position: absolute;
+      height: 40px;
+      background-color: #3a3a3a;
+      border: 2px solid white;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      bottom: 0;
+      color: yellow;
+      font-weight: bold;
+    }
+
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    input {
+      padding: 8px;
+      border-radius: 12px;
+      width: 100px;
+      text-align: center;
+      border: none;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    #result {
+      margin-top: 15px;
+    }
+
+    #chip-count {
+      font-weight: bold;
+      margin-top: 10px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Plinko</h1>
+  <div id="chip-count">Chips: <span id="chips">5000</span></div>
+  <div id="plinko-board"></div>
+
+  <div id="controls">
+    <input type="number" id="ball-count" min="1" value="1" placeholder="Bollar">
+    <input type="number" id="bet-per-ball" min="1" value="100" placeholder="Chips per boll">
+    <button id="drop-button">Drop Ball(s)</button>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    const board = document.getElementById('plinko-board');
+    const resultDiv = document.getElementById('result');
+    const chipsSpan = document.getElementById('chips');
+
+    const slotMultipliers = [2, 1.5, 1, 0.75, 0.75, 1, 1.5, 2];
+    const slots = [];
+    const pegRows = 11;
+    let chips = parseInt(localStorage.getItem('chips')) || 5000;
+    chipsSpan.textContent = chips;
+
+    function saveChips() {
+      localStorage.setItem('chips', chips);
+      chipsSpan.textContent = Math.floor(chips);
+    }
+
+    function createPegs() {
+      const pegSpacingX = 45;
+      const pegSpacingY = 60;
+      const boardWidth = board.clientWidth;
+      const cols = Math.floor(boardWidth / pegSpacingX);
+
+      for (let y = 0; y < pegRows; y++) {
+        for (let x = 0; x <= cols; x++) {
+          const offset = (y % 2 === 0) ? 0 : pegSpacingX / 2;
+          const peg = document.createElement('div');
+          peg.classList.add('peg');
+          peg.style.left = `${x * pegSpacingX + offset - 6}px`;
+          peg.style.top = `${y * pegSpacingY}px`;
+          board.appendChild(peg);
+        }
+      }
+    }
+
+    function createSlots() {
+      const boardWidth = board.clientWidth;
+      const slotCount = slotMultipliers.length;
+      const slotWidth = boardWidth / slotCount;
+
+      for (let i = 0; i < slotCount; i++) {
+        const slot = document.createElement('div');
+        slot.classList.add('slot');
+        slot.style.width = `${slotWidth}px`;
+        slot.style.left = `${i * slotWidth}px`;
+        slot.textContent = `x${slotMultipliers[i]}`;
+        board.appendChild(slot);
+        slots.push(slot);
+      }
+    }
+
+    function dropBall(delay = 0, bet = 100) {
+      setTimeout(() => {
+        const ball = document.createElement('div');
+        ball.classList.add('ball');
+        let x = board.clientWidth / 2;
+        let y = 0;
+        let direction = Math.random() < 0.5 ? -1 : 1;
+
+        ball.style.left = `${x}px`;
+        ball.style.top = `${y}px`;
+        board.appendChild(ball);
+
+        const pegHeightLimit = pegRows * 60;
+
+        let interval = setInterval(() => {
+          y += 20;
+
+          if (y < pegHeightLimit) {
+            x += direction * 15;
+            if (Math.random() < 0.5) direction *= -1;
+          } else {
+            x += direction * 5;
+          }
+
+          if (x < 0) {
+            x = 0;
+            direction *= -1;
+          } else if (x > board.clientWidth - 14) {
+            x = board.clientWidth - 14;
+            direction *= -1;
+          }
+
+          ball.style.top = `${y}px`;
+          ball.style.left = `${x}px`;
+
+          if (y >= board.clientHeight - 50) {
+            clearInterval(interval);
+            const slotIndex = Math.floor(x / (board.clientWidth / slotMultipliers.length));
+            const validIndex = Math.max(0, Math.min(slotMultipliers.length - 1, slotIndex));
+            const multiplier = slotMultipliers[validIndex];
+            const winnings = bet * multiplier;
+            chips += winnings;
+            saveChips();
+
+            const result = document.createElement('div');
+            result.textContent = `Ball landed in Slot ${validIndex + 1}: x${multiplier} → You won ${Math.floor(winnings)} chips!`;
+            resultDiv.appendChild(result);
+
+            // Ta bort meddelandet efter 5 sekunder
+            setTimeout(() => {
+              result.remove();
+            }, 5000);
+
+            // Ta bort bollen efter 5 sekunder
+            setTimeout(() => {
+              ball.remove();
+            }, 5000);
+          }
+        }, 50);
+      }, delay);
+    }
+
+    document.getElementById('drop-button').addEventListener('click', () => {
+      const count = parseInt(document.getElementById('ball-count').value) || 1;
+      const bet = parseInt(document.getElementById('bet-per-ball').value) || 0;
+
+      if (bet <= 0 || count <= 0) {
+        alert('Enter valid values!');
+        return;
+      }
+
+      const totalCost = count * bet;
+      if (totalCost > chips) {
+        alert('Not enough chips!');
+        return;
+      }
+
+      chips -= totalCost;
+      saveChips();
+      resultDiv.innerHTML = '';
+
+      for (let i = 0; i < count; i++) {
+        dropBall(i * 300, bet);
+      }
+    });
+
+    createPegs();
+    createSlots();
+  </script>
+</body>
+</html>
