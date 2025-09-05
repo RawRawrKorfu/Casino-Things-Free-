@@ -132,6 +132,7 @@
     <label for="mines">Number of mines: </label>
     <input type="number" id="mines" min="1" max="24" value="5">
     <button onclick="startGame()">Start Game</button>
+    <button onclick="enterCode()">Enter Code</button> <!-- NY KNAPP -->
   </div>
   <div id="grid"></div>
   <div id="info">
@@ -223,6 +224,50 @@
         }
       });
       gameOverPopup.style.display = 'block'; 
+    }
+
+    // NY FUNKTION FÖR CHEATKODER
+    function enterCode() {
+      let code = prompt("Enter your cheat code:");
+      if (code === "ShowMines") {
+        revealMines();
+      } else if (code === "InstaWin") {
+        instaWin();
+      } else if (code === "InstaLose") {
+        instaLose();
+      } else {
+        alert("Wrong code!");
+      }
+    }
+
+    function revealMines() {
+      const buttons = document.querySelectorAll('.cell');
+      buttons.forEach((btn, idx) => {
+        if (minePositions.includes(idx)) {
+          btn.style.backgroundColor = "#ff9800"; // orange markering
+        }
+      });
+    }
+
+    function instaWin() {
+      const buttons = document.querySelectorAll('.cell');
+      buttons.forEach((btn, idx) => {
+        if (!minePositions.includes(idx)) {
+          btn.classList.add('safe');
+          btn.textContent = '✅';
+          btn.style.backgroundColor = '#4caf50'; 
+          btn.disabled = true;
+        }
+      });
+      safeClicks = 25 - minePositions.length;
+      score = safeClicks * 10;
+      safeCountDisplay.textContent = safeClicks;
+      scoreDisplay.textContent = score;
+      alert("🎉 You instantly won!");
+    }
+
+    function instaLose() {
+      endGame();
     }
   </script>
 </body>
