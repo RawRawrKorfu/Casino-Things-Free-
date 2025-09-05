@@ -124,6 +124,22 @@
     #leaderboardLink:hover {
       background-color: #388e3c;
     }
+
+    /* Cheat console */
+    #cheatConsole {
+      display: none;
+      margin-top: 15px;
+      background: #2e2e2e;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    #cheatConsole input {
+      padding: 5px;
+      border-radius: 5px;
+      border: none;
+      margin-right: 5px;
+    }
   </style>
 </head>
 <body>
@@ -132,8 +148,9 @@
     <label for="mines">Number of mines: </label>
     <input type="number" id="mines" min="1" max="24" value="5">
     <button onclick="startGame()">Start Game</button>
-    <button onclick="enterCode()">Enter Code</button> <!-- NY KNAPP -->
+    <button onclick="toggleCheatConsole()">Open Cheat Console</button> <!-- NY KNAPP -->
   </div>
+
   <div id="grid"></div>
   <div id="info">
     Safe clicks: <span id="safeCount">0</span><br>
@@ -145,6 +162,12 @@
     <button onclick="startGame()">Play Again</button>
   </div>
 
+  <!-- Cheat console -->
+  <div id="cheatConsole">
+    <input type="text" id="cheatInput" placeholder="Enter cheat code">
+    <button onclick="enterCode()">Activate</button>
+  </div>
+
   <!-- Link to the leaderboard -->
   <a id="leaderboardLink" href="leaderboard.html">Go to Leaderboard</a>
 
@@ -153,6 +176,7 @@
     const safeCountDisplay = document.getElementById('safeCount');
     const scoreDisplay = document.getElementById('score');
     const gameOverPopup = document.getElementById('gameOverPopup');
+    const cheatConsole = document.getElementById('cheatConsole');
     let minePositions = [];
     let gameOver = false;
     let safeClicks = 0;
@@ -226,9 +250,14 @@
       gameOverPopup.style.display = 'block'; 
     }
 
-    // NY FUNKTION FÖR CHEATKODER
+    // Visa / dölj fältet för cheat codes
+    function toggleCheatConsole() {
+      cheatConsole.style.display = cheatConsole.style.display === "none" ? "block" : "none";
+    }
+
+    // Cheatkoder
     function enterCode() {
-      let code = prompt("Enter your cheat code:");
+      let code = document.getElementById("cheatInput").value;
       if (code === "ShowMines") {
         revealMines();
       } else if (code === "InstaWin") {
@@ -238,6 +267,7 @@
       } else {
         alert("Wrong code!");
       }
+      document.getElementById("cheatInput").value = "";
     }
 
     function revealMines() {
