@@ -126,7 +126,7 @@
       background-color: #388e3c;
     }
 
-    /* Cheat fält */
+    /* Cheat fält (gömt tills man kallar på det i konsolen) */
     #cheatSection {
       margin-top: 20px;
       display: none;
@@ -148,7 +148,6 @@
     <label for="mines">Number of mines: </label>
     <input type="number" id="mines" min="1" max="24" value="5">
     <button onclick="startGame()">Start Game</button>
-    <button onclick="toggleCheatSection()">Cheats</button>
   </div>
 
   <div id="grid"></div>
@@ -158,6 +157,7 @@
     Score: <span id="score">0</span>
   </div>
 
+  <!-- Cheat-sektionen visas bara när man kör Cheats_2_0() -->
   <div id="cheatSection">
     <input type="text" id="cheatInput" placeholder="Enter cheat code">
     <button onclick="applyCheat()">Apply</button>
@@ -221,7 +221,7 @@
         button.classList.add('mine');
         button.textContent = '💣';
         button.style.backgroundColor = '#e53935'; 
-        endGame();
+        endGame(false); // förlust
       } else {
         button.classList.add('safe');
         button.textContent = '✅';
@@ -231,10 +231,21 @@
         score += 10;
         safeCountDisplay.textContent = safeClicks;
         scoreDisplay.textContent = score;
+
+        // kolla om du har vunnit
+        checkWin();
       }
     }
 
-    function endGame() {
+    function checkWin() {
+      const totalCells = 25;
+      const totalMines = minePositions.length;
+      if (safeClicks === totalCells - totalMines) {
+        endGame(true); // vinst
+      }
+    }
+
+    function endGame(won) {
       gameOver = true;
       const buttons = document.querySelectorAll('.cell');
       buttons.forEach((btn, idx) => {
@@ -245,14 +256,17 @@
           btn.style.backgroundColor = '#e53935'; 
         }
       });
+
+      if (won) {
+        gameOverPopup.querySelector("p").textContent = "You won! 🎉";
+      } else {
+        gameOverPopup.querySelector("p").textContent = "The game is over! You hit a mine.";
+      }
+
       gameOverPopup.style.display = 'block'; 
     }
 
-    function toggleCheatSection() {
-      cheatSection.style.display = 
-        cheatSection.style.display === "none" ? "block" : "none";
-    }
-
+    // cheat funktioner
     function applyCheat() {
       const code = document.getElementById('cheatInput').value.trim();
 
@@ -264,16 +278,22 @@
           }
         });
       } else if (code === "InstaWin") {
-        score += 1000;
-        scoreDisplay.textContent = score;
+        endGame(true);
         alert("You instantly won!");
       } else if (code === "InstaLose") {
-        endGame();
+        endGame(false);
         alert("You instantly lost!");
       } else {
         alert("Invalid cheat code!");
       }
     }
+
+    // öppna cheat-fält via console
+    function Cheats_2_0() {
+      cheatSection.style.display = "block";
+      console.log("Cheat menu unlocked ✅");
+    }
+    window.Cheats_2_0 = Cheats_2_0; // gör funktionen global
   </script>
 </body>
 </html>
