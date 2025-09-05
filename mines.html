@@ -11,9 +11,10 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       height: 100vh;
       margin: 0;
+      padding-top: 20px;
     }
 
     h1 {
@@ -125,20 +126,19 @@
       background-color: #388e3c;
     }
 
-    /* Cheat console */
-    #cheatConsole {
+    /* Cheat fält */
+    #cheatSection {
+      margin-top: 20px;
       display: none;
-      margin-top: 15px;
-      background: #2e2e2e;
-      padding: 10px;
-      border-radius: 10px;
+      text-align: center;
     }
 
-    #cheatConsole input {
+    #cheatInput {
       padding: 5px;
-      border-radius: 5px;
+      border-radius: 10px;
       border: none;
-      margin-right: 5px;
+      background-color: #333;
+      color: white;
     }
   </style>
 </head>
@@ -148,13 +148,19 @@
     <label for="mines">Number of mines: </label>
     <input type="number" id="mines" min="1" max="24" value="5">
     <button onclick="startGame()">Start Game</button>
-    <button onclick="toggleCheatConsole()">Open Cheat Console</button> <!-- NY KNAPP -->
+    <button onclick="toggleCheatSection()">Cheats</button>
   </div>
 
   <div id="grid"></div>
+
   <div id="info">
     Safe clicks: <span id="safeCount">0</span><br>
     Score: <span id="score">0</span>
+  </div>
+
+  <div id="cheatSection">
+    <input type="text" id="cheatInput" placeholder="Enter cheat code">
+    <button onclick="applyCheat()">Apply</button>
   </div>
 
   <div id="gameOverPopup">
@@ -162,13 +168,6 @@
     <button onclick="startGame()">Play Again</button>
   </div>
 
-  <!-- Cheat console -->
-  <div id="cheatConsole">
-    <input type="text" id="cheatInput" placeholder="Enter cheat code">
-    <button onclick="enterCode()">Activate</button>
-  </div>
-
-  <!-- Link to the leaderboard -->
   <a id="leaderboardLink" href="leaderboard.html">Go to Leaderboard</a>
 
   <script>
@@ -176,12 +175,11 @@
     const safeCountDisplay = document.getElementById('safeCount');
     const scoreDisplay = document.getElementById('score');
     const gameOverPopup = document.getElementById('gameOverPopup');
-    const cheatConsole = document.getElementById('cheatConsole');
+    const cheatSection = document.getElementById('cheatSection');
     let minePositions = [];
     let gameOver = false;
     let safeClicks = 0;
     let score = 0;
-    let leaderboard = [];
 
     function startGame() {
       const mineCount = parseInt(document.getElementById('mines').value);
@@ -250,54 +248,31 @@
       gameOverPopup.style.display = 'block'; 
     }
 
-    // Visa / dölj fältet för cheat codes
-    function toggleCheatConsole() {
-      cheatConsole.style.display = cheatConsole.style.display === "none" ? "block" : "none";
+    function toggleCheatSection() {
+      cheatSection.style.display = 
+        cheatSection.style.display === "none" ? "block" : "none";
     }
 
-    // Cheatkoder
-    function enterCode() {
-      let code = document.getElementById("cheatInput").value;
+    function applyCheat() {
+      const code = document.getElementById('cheatInput').value.trim();
+
       if (code === "ShowMines") {
-        revealMines();
+        document.querySelectorAll('.cell').forEach((btn, idx) => {
+          if (minePositions.includes(idx)) {
+            btn.style.backgroundColor = "#ff9800";
+            btn.textContent = "💣";
+          }
+        });
       } else if (code === "InstaWin") {
-        instaWin();
+        score += 1000;
+        scoreDisplay.textContent = score;
+        alert("You instantly won!");
       } else if (code === "InstaLose") {
-        instaLose();
+        endGame();
+        alert("You instantly lost!");
       } else {
-        alert("Wrong code!");
+        alert("Invalid cheat code!");
       }
-      document.getElementById("cheatInput").value = "";
-    }
-
-    function revealMines() {
-      const buttons = document.querySelectorAll('.cell');
-      buttons.forEach((btn, idx) => {
-        if (minePositions.includes(idx)) {
-          btn.style.backgroundColor = "#ff9800"; // orange markering
-        }
-      });
-    }
-
-    function instaWin() {
-      const buttons = document.querySelectorAll('.cell');
-      buttons.forEach((btn, idx) => {
-        if (!minePositions.includes(idx)) {
-          btn.classList.add('safe');
-          btn.textContent = '✅';
-          btn.style.backgroundColor = '#4caf50'; 
-          btn.disabled = true;
-        }
-      });
-      safeClicks = 25 - minePositions.length;
-      score = safeClicks * 10;
-      safeCountDisplay.textContent = safeClicks;
-      scoreDisplay.textContent = score;
-      alert("🎉 You instantly won!");
-    }
-
-    function instaLose() {
-      endGame();
     }
   </script>
 </body>
