@@ -33,7 +33,7 @@
       position: absolute;
       top: 50%;
       left: 100%;
-      transform: translateY(-50%) rotate(180deg); /* pekar inåt */
+      transform: translateY(-50%) rotate(180deg);
       transform-origin: left center;
       z-index: 10;
     }
@@ -89,7 +89,7 @@
     <div id="arrow"></div>
   </div>
 
-  <div id="chips">Chips: <span id="chipCount">5000</span></div>
+  <div id="chips">Chips: <span id="chipCount">0</span></div>
 
   <div id="controls">
     <input type="number" id="betAmount" placeholder="Bet amount" min="1">
@@ -112,8 +112,23 @@
     const colors = ['red', 'blue'];
     const sectors = [];
 
-    let chips = 5000;
+    let chips = 0;
     const chipDisplay = document.getElementById('chipCount');
+
+    // 🔹 Spara / ladda chips
+    function saveChips() {
+      localStorage.setItem('rouletteChips', chips);
+      chipDisplay.textContent = chips;
+    }
+
+    function loadChips() {
+      const saved = localStorage.getItem('rouletteChips');
+      chips = saved ? parseInt(saved) : 5000;
+      chipDisplay.textContent = chips;
+    }
+
+    // Ladda chips direkt när spelet startar
+    loadChips();
 
     for (let i = 0; i < totalSectors; i++) {
       sectors.push({
@@ -171,7 +186,7 @@
       }
 
       chips -= betAmount;
-      chipDisplay.textContent = chips;
+      saveChips();
 
       const spinAngle = Math.random() * 360 + 360 * 3;
       const finalRotation = spinAngle * Math.PI / 180;
@@ -204,13 +219,24 @@
             resultText += "You lose 😢";
           }
 
-          chipDisplay.textContent = chips;
+          saveChips();
           resultDiv.textContent = resultText;
         }
       }
 
       requestAnimationFrame(animateSpin);
     }
+
+    // 🔥 Konsol-cheat: AddChips(amount)
+    window.AddChips = function(amount) {
+      if (isNaN(amount) || amount <= 0) {
+        console.log("❌ Ange ett positivt nummer! Exempel: AddChips(100)");
+        return;
+      }
+      chips += amount;
+      saveChips();
+      console.log(`✅ Du lade till ${amount} chips! Totalt: ${chips}`);
+    };
   </script>
 </body>
 </html>
